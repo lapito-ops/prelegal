@@ -104,6 +104,7 @@ logs/
 Thumbs.db
 
 # =========================
-# Claude Code (local, per-user settings)
+# Claude Code settings
 # =========================
+.claude/settings.json
 .claude/settings.local.json
