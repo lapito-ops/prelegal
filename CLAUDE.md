@@ -5,7 +5,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-Before we start: the initial implementation is a frontend-only prototype that only supports the Mutual NDA document with no AI chat.
+Current state: only the Mutual NDA document is supported, with a fake login and no AI chat yet. See "Implementation status" below.
 
 ## Development process
 
@@ -27,7 +27,7 @@ The entire project should be packaged into a Docker container.
 The backend should be in backend/ and be a uv project, using FastAPI.
 The frontend should be in frontend/
 The database should use SQLLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in.
-Consider statically building the frontend and serving it via FastAPI, if that will work.
+The frontend is statically exported (Next.js `output: "export"`) and served by FastAPI.
 There should be scripts in scripts/ for:
 ```bash
 # Mac
@@ -51,3 +51,15 @@ Backend available at http://localhost:8000
 - Purple Secondary: `#753991` - submit buttons, important actions
 - Dark Navy: `#032147` - main headings
 - Gray Text: `#888888` - supporting text, labels
+
+## Implementation status
+
+- PL-2: CommonPaper templates in `templates/`, indexed by `catalog.json`.
+- PL-3: Mutual NDA creator: form, live preview, client-side PDF download (`@react-pdf/renderer`).
+- PL-4: V1 foundation:
+  - Frontend (Next.js 15, Tailwind 4): fake login at `/` (accepts any credentials), NDA creator at `/nda/`. `trailingSlash: true` so FastAPI `StaticFiles` serves `nda/index.html`. Standard Terms are read from `../templates` at build time. Brand colors are `@theme` tokens (`brand-*`) in `globals.css`, mirrored as constants in `NdaPdf.tsx`.
+  - Backend (`backend/app`): `create_app(db_path, static_dir)` in `main.py`; `GET /api/health`; static mount registered last. `db.py` deletes and recreates SQLite with a `users` table on startup. No auth endpoints yet.
+  - Docker: multi-stage `Dockerfile` (node:24 build, python:3.15 + uv runtime); env vars `STATIC_DIR`, `DB_PATH`; `.env` passed via `--env-file`, never baked in. Start/stop scripts build and run a container named `prelegal`.
+  - Tests: `cd frontend && npm test` (Vitest, `src/lib/*.test.ts`); `cd backend && uv run pytest`.
+
+Next up: real sign up / sign in, AI chat, additional document types.
