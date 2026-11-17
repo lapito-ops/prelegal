@@ -4,6 +4,9 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.163.1",
+    "litellm>=1.109.1",
+    "pydantic>=2.14.3",
+    "python-dotenv>=1.2.4",
     "uvicorn[standard]>=0.54.0",
 ]
 
