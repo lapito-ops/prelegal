@@ -9,15 +9,30 @@ import {
 } from "@/lib/nda";
 import type { Clause, Run } from "@/lib/terms";
 
+// Brand palette; react-pdf cannot read the Tailwind theme in globals.css.
+const BRAND_BLUE = "#209dd7";
+const BRAND_NAVY = "#032147";
+const BRAND_GRAY = "#888888";
+const BRAND_YELLOW = "#ecad0a";
+
 // Never hyphenate words (e.g. URLs or defined terms) across lines.
 Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({
   page: { padding: 56, fontFamily: "Times-Roman", fontSize: 10.5, lineHeight: 1.35 },
-  title: { fontFamily: "Times-Bold", fontSize: 16, textAlign: "center", marginBottom: 12 },
+  title: {
+    fontFamily: "Times-Bold",
+    fontSize: 16,
+    textAlign: "center",
+    color: BRAND_NAVY,
+    paddingBottom: 6,
+    marginBottom: 12,
+    borderBottomWidth: 1.5,
+    borderBottomColor: BRAND_YELLOW,
+  },
   h2: { fontFamily: "Times-Bold", fontSize: 11, marginBottom: 6, textTransform: "uppercase" },
   h3: { fontFamily: "Times-Bold", fontSize: 11, marginTop: 8 },
-  hint: { fontFamily: "Times-Italic", fontSize: 9, color: "#78716c" },
+  hint: { fontFamily: "Times-Italic", fontSize: 9, color: BRAND_GRAY },
   paragraph: { marginBottom: 6 },
   option: { flexDirection: "row", marginTop: 2 },
   box: {
@@ -42,9 +57,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   labelCell: { flex: 0.7, textAlign: "left", fontFamily: "Times-Bold" },
-  attribution: { fontSize: 8, color: "#78716c", marginTop: 10 },
+  attribution: { fontSize: 8, color: BRAND_GRAY, marginTop: 10 },
   bold: { fontFamily: "Times-Bold" },
-  ref: { fontFamily: "Times-Bold", color: "#4338ca" },
+  ref: { fontFamily: "Times-Bold", color: BRAND_BLUE },
 });
 
 function Runs({ runs }: { runs: Run[] }) {

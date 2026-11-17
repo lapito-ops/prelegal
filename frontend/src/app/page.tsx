@@ -1,20 +1,42 @@
-import NdaCreator from "@/components/NdaCreator";
-import { loadStandardTerms } from "@/lib/loadStandardTerms";
+"use client";
 
-export default async function Home() {
-  const terms = await loadStandardTerms();
+import { useRouter } from "next/navigation";
+import { inputClass } from "@/components/NdaForm";
+
+/** Fake login: accepts any credentials and brings the user into the platform. */
+export default function Login() {
+  const router = useRouter();
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    router.push("/nda/");
+  }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <header className="mb-8 space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Prelegal</p>
-        <h1 className="text-3xl font-bold tracking-tight">Mutual NDA Creator</h1>
-        <p className="max-w-2xl text-stone-600">
-          Fill in the key details below. The Common Paper Mutual Non-Disclosure Agreement updates
-          as you type, and you can download the completed document as a PDF.
-        </p>
-      </header>
-      <NdaCreator terms={terms} />
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm space-y-5 rounded-lg border-t-4 border-brand-yellow bg-white p-8 shadow-md"
+      >
+        <header className="space-y-1">
+          <h1 className="text-2xl font-bold text-brand-navy">Prelegal</h1>
+          <p className="text-sm text-brand-gray">Sign in to draft your legal agreements.</p>
+        </header>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-brand-gray">Email</span>
+          <input type="email" required autoComplete="email" className={inputClass} />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-brand-gray">Password</span>
+          <input type="password" required autoComplete="current-password" className={inputClass} />
+        </label>
+        <button
+          type="submit"
+          className="w-full rounded-md bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90"
+        >
+          Sign in
+        </button>
+      </form>
     </main>
   );
 }
