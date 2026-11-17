@@ -7,13 +7,13 @@ interface Props {
   onChange: (data: NdaData) => void;
 }
 
-const inputClass =
-  "w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
+export const inputClass =
+  "w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-sm font-medium text-stone-700">{label}</span>
+      <span className="text-sm font-medium text-brand-gray">{label}</span>
       {children}
     </label>
   );
@@ -22,7 +22,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <fieldset className="space-y-4 rounded-lg border border-stone-200 bg-white p-5">
-      <legend className="px-1 text-sm font-semibold uppercase tracking-wide text-stone-500">
+      <legend className="px-1 text-sm font-semibold uppercase tracking-wide text-brand-navy">
         {title}
       </legend>
       {children}
@@ -92,7 +92,7 @@ export default function NdaForm({ data, onChange }: Props) {
         </Field>
 
         <div className="space-y-2">
-          <span className="text-sm font-medium text-stone-700">MNDA Term</span>
+          <span className="text-sm font-medium text-brand-gray">MNDA Term</span>
           <Radio
             name="mndaTerm"
             checked={data.mndaTermType === "expires"}
@@ -112,7 +112,7 @@ export default function NdaForm({ data, onChange }: Props) {
         </div>
 
         <div className="space-y-2">
-          <span className="text-sm font-medium text-stone-700">Term of Confidentiality</span>
+          <span className="text-sm font-medium text-brand-gray">Term of Confidentiality</span>
           <Radio
             name="confidentiality"
             checked={data.confidentialityType === "years"}

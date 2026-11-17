@@ -55,7 +55,7 @@ export default function NdaCreator({ terms }: { terms: Clause[] }) {
             type="button"
             onClick={handleDownload}
             disabled={status === "generating"}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-md bg-brand-purple px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90 disabled:cursor-wait disabled:opacity-60"
           >
             {status === "generating" ? "Generating PDF…" : "Download PDF"}
           </button>

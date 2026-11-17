@@ -15,13 +15,13 @@ function Runs({ runs }: { runs: Run[] }) {
         return <strong key={i}>{run.text}</strong>;
       case "ref":
         return (
-          <span key={i} className="font-medium text-indigo-700">
+          <span key={i} className="font-medium text-brand-blue">
             {run.text}
           </span>
         );
       case "link":
         return (
-          <a key={i} href={run.href} className="underline" target="_blank" rel="noreferrer">
+          <a key={i} href={run.href} className="text-brand-blue underline" target="_blank" rel="noreferrer">
             {run.text}
           </a>
         );
@@ -36,7 +36,7 @@ export default function NdaPreview({ data, terms }: { data: NdaData; terms: Clau
   return (
     <article className="space-y-6 bg-white px-8 py-10 font-serif text-[13px] leading-relaxed text-stone-900 shadow-md sm:px-12">
       <header className="space-y-3">
-        <h1 className="text-center text-xl font-bold">Mutual Non-Disclosure Agreement</h1>
+        <h1 className="text-center text-xl font-bold text-brand-navy">Mutual Non-Disclosure Agreement</h1>
         <h2 className="text-sm font-bold uppercase">Using this Mutual Non-Disclosure Agreement</h2>
         <p>{COVER_PAGE_INTRO}</p>
       </header>
@@ -44,7 +44,7 @@ export default function NdaPreview({ data, terms }: { data: NdaData; terms: Clau
       {buildCoverPage(data).map((section) => (
         <section key={section.title} className="space-y-1">
           <h3 className="font-bold">{section.title}</h3>
-          {section.hint && <p className="text-xs italic text-stone-500">{section.hint}</p>}
+          {section.hint && <p className="text-xs italic text-brand-gray">{section.hint}</p>}
           {section.lines?.map((line) => (
             <p key={line} className="whitespace-pre-wrap">
               {line}
@@ -75,7 +75,7 @@ export default function NdaPreview({ data, terms }: { data: NdaData; terms: Clau
               <th className="border border-stone-300 p-2 align-top font-semibold">
                 {row.label}
                 {row.hint && (
-                  <span className="block text-xs font-normal italic text-stone-500">
+                  <span className="block text-xs font-normal italic text-brand-gray">
                     {row.hint}
                   </span>
                 )}
@@ -90,7 +90,7 @@ export default function NdaPreview({ data, terms }: { data: NdaData; terms: Clau
         </tbody>
       </table>
 
-      <p className="text-xs text-stone-500">{ATTRIBUTION}</p>
+      <p className="text-xs text-brand-gray">{ATTRIBUTION}</p>
 
       <section className="space-y-3 border-t border-stone-200 pt-6">
         <h2 className="text-center text-lg font-bold">Standard Terms</h2>
