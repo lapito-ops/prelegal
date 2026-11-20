@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app import auth, documents
+from app.auth import CurrentUser
 from app.chat import ChatRequest, ChatTurn, chat
 from app.db import init_db
 
@@ -27,13 +29,16 @@ def create_app(db_path: Path = DB_PATH, static_dir: Path = STATIC_DIR) -> FastAP
         yield
 
     app = FastAPI(title="Prelegal", lifespan=lifespan)
+    app.state.db_path = db_path
+    app.include_router(auth.router)
+    app.include_router(documents.router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.post("/api/chat")
-    def chat_turn(request: ChatRequest) -> ChatTurn:
+    def chat_turn(request: ChatRequest, user: CurrentUser) -> ChatTurn:
         return chat(request)
 
     if static_dir.is_dir():

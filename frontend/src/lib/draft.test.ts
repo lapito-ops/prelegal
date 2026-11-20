@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCoverRows,
   buildSignatureRows,
+  draftTitle,
   emptyDraft,
   formatDate,
   missingFields,
@@ -85,5 +86,13 @@ describe("pdfFileName", () => {
   it("slugs the document name and companies", () => {
     expect(pdfFileName(filled, doc)).toBe("Pilot-Agreement-Acme-Inc-Globex.pdf");
     expect(pdfFileName(emptyDraft, doc)).toBe("Pilot-Agreement.pdf");
+  });
+});
+
+describe("draftTitle", () => {
+  it("names the document and its companies", () => {
+    expect(draftTitle(filled, doc.name)).toBe("Pilot Agreement: Acme Inc. & Globex");
+    expect(draftTitle(emptyDraft, doc.name)).toBe("Pilot Agreement");
+    expect(draftTitle(emptyDraft)).toBe("Untitled draft");
   });
 });

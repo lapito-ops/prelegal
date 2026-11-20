@@ -5,7 +5,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-Current state: all 11 catalog documents are supported, drafted via AI chat, with a fake login. See "Implementation status" below.
+Current state: all 11 catalog documents are supported, drafted via AI chat, with real accounts and a per-user document history. See "Implementation status" below.
 
 ## Development process
 
@@ -70,5 +70,8 @@ Backend available at http://localhost:8000
   - Backend: `Draft {documentId, parties, terms: [{label, value}]}`; `documentId` is a `Literal` of catalog ids or `""`. The LLM returns `LlmTurn {draft, reply, question}`; the separate `question` guarantees a follow-on question every turn, and the API joins it into `reply`. `normalize()` fits a draft to its document (two parties, exactly its terms in order). The LLM only fills term slots it can see, so `chat()` asks again once when it picks a new document. Unsupported requests get the closest supported document offered.
   - Frontend: `lib/terms.ts` parses both template styles (nested `1.`/`a.` lists with `header_N` spans, and `**Title**.` clauses) into flat `Clause {depth, label, title?, body}`; handles CRLF. Generic cover page (key terms table + party table with role headers) in `DraftPreview`/`DraftPdf`; the document list shows until the AI picks one. `DraftChat` refocuses the input after each turn.
   - Tests: live tests `test_live_chat_picks_document_and_fills_terms` and `test_live_chat_offers_closest_for_unsupported_document`; `terms.test.ts` parses every real template and checks no markup leaks.
-
-Next up: real sign up / sign in.
+- PL-7: multiple users and polish:
+  - Backend: `db.py` adds `sessions` and `documents` tables, a `connect()` helper and a per-request `Db` dependency (reads `app.state.db_path`). `auth.py`: `/api/auth/{signup,signin,signout,me}`, scrypt password hashes, random session token in an HttpOnly SameSite=Lax `session` cookie; `CurrentUser` dependency (401 otherwise) guards `/api/chat` and documents. `documents.py`: `GET /api/documents` (newest first, no messages), `POST` (server-assigned UUID), `GET`/`PUT /api/documents/{id}`; other users' documents are 404.
+  - Frontend: `lib/api.ts` (`request` helper, `ApiError` with backend `detail`); `chat.ts` uses it. Pages: `/` sign in, `/signup/`, `/documents/` (history), `/draft/` (new) and `/draft/?id=` (resume; `DraftWorkspace` uses `useSearchParams` inside `Suspense`). `AppShell` (nav, footer) wraps signed-in pages and redirects to `/` via `useCurrentUser`. `DraftCreator` autosaves after each AI turn once the user has spoken (POST first, then PUT). "New document" is a plain `<a>` so a draft in progress is always replaced. Document ids are server-generated because `crypto.randomUUID` is unavailable on plain-HTTP non-localhost origins.
+  - `DISCLAIMER` in `lib/draft.ts` shows on the draft page banner, the preview, the PDF (plus a fixed footer on every page) and the auth pages. Shared button/card classes live in `components/styles.ts`.
+  - Tests: `conftest.py` provides `client` and signed-in `user_client` fixtures; `test_auth.py`, `test_documents.py`, `lib/api.test.ts`.

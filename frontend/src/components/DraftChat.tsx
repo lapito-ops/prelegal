@@ -1,20 +1,27 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { isSignedOut } from "@/lib/api";
 import { sendChat, type ChatMessage } from "@/lib/chat";
 import type { Draft } from "@/lib/draft";
-import { inputClass } from "./styles";
+import { cardClass, inputClass, primaryButton } from "./styles";
 
 interface Props {
   draft: Draft;
-  onChange: (draft: Draft) => void;
+  initialMessages: ChatMessage[];
+  onTurn: (messages: ChatMessage[], draft: Draft) => void;
 }
 
-/** Freeform chat with the AI, which picks the document, asks questions and fills it in. */
-export default function DraftChat({ draft, onChange }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+/**
+ * Freeform chat with the AI, which picks the document, asks questions and fills it in.
+ * A new chat starts with the AI's greeting; a resumed one continues from `initialMessages`.
+ */
+export default function DraftChat({ draft, initialMessages, onTurn }: Props) {
+  const router = useRouter();
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
-  const [pending, setPending] = useState(true);
+  const [pending, setPending] = useState(initialMessages.length === 0);
   const [error, setError] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,9 +31,11 @@ export default function DraftChat({ draft, onChange }: Props) {
     setError(false);
     try {
       const turn = await sendChat(history, draft);
-      setMessages([...history, { role: "assistant", content: turn.reply }]);
-      onChange(turn.draft);
+      const updated: ChatMessage[] = [...history, { role: "assistant", content: turn.reply }];
+      setMessages(updated);
+      onTurn(updated, turn.draft);
     } catch (err) {
+      if (isSignedOut(err)) router.replace("/");
       console.error(err);
       setError(true);
     } finally {
@@ -35,8 +44,8 @@ export default function DraftChat({ draft, onChange }: Props) {
   }
 
   useEffect(() => {
-    runTurn([]);
-    // Greeting runs once on mount.
+    if (initialMessages.length === 0) runTurn([]);
+    // Greeting runs once on mount, and only for a new chat.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -60,7 +69,11 @@ export default function DraftChat({ draft, onChange }: Props) {
   }
 
   return (
-    <section className="flex h-[32rem] flex-col rounded-lg border border-stone-200 bg-white">
+    <section className={`${cardClass} flex h-[34rem] flex-col`}>
+      <header className="flex items-center gap-2 border-b border-stone-200 px-5 py-3">
+        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+        <h2 className="text-sm font-semibold text-brand-navy">AI drafting assistant</h2>
+      </header>
       <div className="flex-1 space-y-3 overflow-y-auto p-5">
         {messages.map((m, i) => (
           <p
@@ -97,7 +110,7 @@ export default function DraftChat({ draft, onChange }: Props) {
         <button
           type="submit"
           disabled={pending || !input.trim()}
-          className="rounded-md bg-brand-purple px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-purple/90 disabled:opacity-60"
+          className={`${primaryButton} py-2`}
         >
           Send
         </button>

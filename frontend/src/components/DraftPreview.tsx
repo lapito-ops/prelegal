@@ -1,4 +1,5 @@
 import {
+  DISCLAIMER,
   SIGNING_STATEMENT,
   attribution,
   buildCoverRows,
@@ -46,6 +47,9 @@ const cell = "border border-stone-300 p-2 align-top";
 export default function DraftPreview({ draft, doc }: { draft: Draft; doc: LoadedDocument }) {
   return (
     <article className="space-y-6 bg-white px-8 py-10 font-serif text-[13px] leading-relaxed text-stone-900 shadow-md sm:px-12">
+      <p className="rounded border border-brand-yellow bg-brand-yellow/10 px-3 py-2 font-sans text-xs text-stone-700">
+        {DISCLAIMER}
+      </p>
       <header className="space-y-3">
         <h1 className="text-center text-xl font-bold text-brand-navy">{doc.name}</h1>
         <h2 className="text-sm font-bold uppercase">Cover Page</h2>
