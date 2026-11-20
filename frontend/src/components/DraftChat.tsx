@@ -2,29 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import { sendChat, type ChatMessage } from "@/lib/chat";
-import type { NdaData } from "@/lib/nda";
+import type { Draft } from "@/lib/draft";
 import { inputClass } from "./styles";
 
 interface Props {
-  data: NdaData;
-  onChange: (data: NdaData) => void;
+  draft: Draft;
+  onChange: (draft: Draft) => void;
 }
 
-/** Freeform chat with the AI, which asks about the NDA and fills in its fields. */
-export default function NdaChat({ data, onChange }: Props) {
+/** Freeform chat with the AI, which picks the document, asks questions and fills it in. */
+export default function DraftChat({ draft, onChange }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(true);
   const [error, setError] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function runTurn(history: ChatMessage[]) {
     setPending(true);
     setError(false);
     try {
-      const turn = await sendChat(history, data);
+      const turn = await sendChat(history, draft);
       setMessages([...history, { role: "assistant", content: turn.reply }]);
-      onChange(turn.fields);
+      onChange(turn.draft);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -42,6 +43,11 @@ export default function NdaChat({ data, onChange }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" });
   }, [messages, pending]);
+
+  // Clicking Send moves focus to the button; return it to the input once the AI answers.
+  useEffect(() => {
+    if (!pending) inputRef.current?.focus();
+  }, [pending]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -81,6 +87,7 @@ export default function NdaChat({ data, onChange }: Props) {
       </div>
       <form onSubmit={handleSubmit} className="flex gap-2 border-t border-stone-200 p-3">
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your answer…"

@@ -12,9 +12,9 @@ def db_path(tmp_path):
 @pytest.fixture
 def client(tmp_path, db_path):
     static = tmp_path / "static"
-    (static / "nda").mkdir(parents=True)
+    (static / "draft").mkdir(parents=True)
     (static / "index.html").write_text("login page")
-    (static / "nda" / "index.html").write_text("nda page")
+    (static / "draft" / "index.html").write_text("draft page")
     with TestClient(create_app(db_path, static)) as c:
         yield c
 
@@ -33,9 +33,9 @@ def test_serves_login_at_root(client):
     assert client.get("/").text == "login page"
 
 
-def test_serves_nda_page(client):
-    assert client.get("/nda/").text == "nda page"
-    assert client.get("/nda").text == "nda page"
+def test_serves_draft_page(client):
+    assert client.get("/draft/").text == "draft page"
+    assert client.get("/draft").text == "draft page"
 
 
 def test_unknown_api_route_is_404(client):

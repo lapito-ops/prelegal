@@ -9,7 +9,7 @@ export default function Login() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/nda/");
+    router.push("/draft/");
   }
 
   return (

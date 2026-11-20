@@ -5,7 +5,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-Current state: only the Mutual NDA document is supported, drafted via AI chat, with a fake login. See "Implementation status" below.
+Current state: all 11 catalog documents are supported, drafted via AI chat, with a fake login. See "Implementation status" below.
 
 ## Development process
 
@@ -65,5 +65,10 @@ Backend available at http://localhost:8000
   - Backend: `POST /api/chat` in `backend/app/chat.py` is stateless; it takes `{messages, fields}` and returns `ChatTurn {reply, fields}` via LiteLLM/OpenRouter/Cerebras Structured Outputs. `NdaFields` mirrors the frontend `NdaData` in camelCase (pydantic aliases); the LLM returns the full field snapshot each turn. An empty history yields the AI greeting. `main.py` loads the repo `.env` for local dev.
   - Frontend: `NdaChat.tsx` (replaces `NdaForm.tsx`) calls `lib/chat.ts` `sendChat`; `NdaCreator` replaces its state with the returned fields. Shared `inputClass` lives in `components/styles.ts`.
   - Tests: backend mocks `completion`; `test_live_chat_fills_fields` hits the real model and is skipped without `OPENROUTER_API_KEY`.
+- PL-6: all catalog documents; supersedes the NDA-specific names above (`/nda/` -> `/draft/`, `Nda*` -> `Draft*`, `nda.ts` -> `draft.ts`, `{messages, fields}` -> `{messages, draft}`):
+  - `catalog.json` is the single source of truth: each entry has `id`, `parties` (two role names) and `terms` (`{label, description, optional?}`). The Mutual NDA is one entry pointing at `templates/Mutual-NDA.md`. Backend loads it in `app/catalog.py` (`CATALOG_PATH` env in Docker); frontend loads it plus every template at build time in `lib/loadDocuments.ts`.
+  - Backend: `Draft {documentId, parties, terms: [{label, value}]}`; `documentId` is a `Literal` of catalog ids or `""`. The LLM returns `LlmTurn {draft, reply, question}`; the separate `question` guarantees a follow-on question every turn, and the API joins it into `reply`. `normalize()` fits a draft to its document (two parties, exactly its terms in order). The LLM only fills term slots it can see, so `chat()` asks again once when it picks a new document. Unsupported requests get the closest supported document offered.
+  - Frontend: `lib/terms.ts` parses both template styles (nested `1.`/`a.` lists with `header_N` spans, and `**Title**.` clauses) into flat `Clause {depth, label, title?, body}`; handles CRLF. Generic cover page (key terms table + party table with role headers) in `DraftPreview`/`DraftPdf`; the document list shows until the AI picks one. `DraftChat` refocuses the input after each turn.
+  - Tests: live tests `test_live_chat_picks_document_and_fills_terms` and `test_live_chat_offers_closest_for_unsupported_document`; `terms.test.ts` parses every real template and checks no markup leaks.
 
-Next up: real sign up / sign in, additional document types.
+Next up: real sign up / sign in.
