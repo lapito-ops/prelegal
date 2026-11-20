@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { defaultNda, missingFields, pdfFileName, todayIso, type NdaData } from "@/lib/nda";
+import { useState } from "react";
+import { defaultNda, missingFields, pdfFileName, type NdaData } from "@/lib/nda";
 import type { Clause } from "@/lib/terms";
-import NdaForm from "./NdaForm";
+import NdaChat from "./NdaChat";
 import NdaPreview from "./NdaPreview";
 
 async function downloadPdf(data: NdaData, terms: Clause[]) {
@@ -26,12 +26,6 @@ export default function NdaCreator({ terms }: { terms: Clause[] }) {
   const [data, setData] = useState<NdaData>(defaultNda);
   const [status, setStatus] = useState<"idle" | "generating" | "error">("idle");
 
-  // Default the Effective Date to today on the client, avoiding a
-  // server/client mismatch from a date baked in at build time.
-  useEffect(() => {
-    setData((d) => (d.effectiveDate ? d : { ...d, effectiveDate: todayIso() }));
-  }, []);
-
   const missing = missingFields(data);
 
   async function handleDownload() {
@@ -48,7 +42,7 @@ export default function NdaCreator({ terms }: { terms: Clause[] }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <div className="space-y-6">
-        <NdaForm data={data} onChange={setData} />
+        <NdaChat data={data} onChange={setData} />
 
         <div className="space-y-2 rounded-lg border border-stone-200 bg-white p-5">
           <button

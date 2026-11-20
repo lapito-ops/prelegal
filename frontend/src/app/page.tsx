@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { inputClass } from "@/components/NdaForm";
+import { inputClass } from "@/components/styles";
 
 /** Fake login: accepts any credentials and brings the user into the platform. */
 export default function Login() {

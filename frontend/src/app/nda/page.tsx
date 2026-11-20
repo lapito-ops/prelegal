@@ -10,8 +10,8 @@ export default async function Home() {
         <p className="text-sm font-semibold uppercase tracking-wide text-brand-blue">Prelegal</p>
         <h1 className="text-3xl font-bold tracking-tight text-brand-navy">Mutual NDA Creator</h1>
         <p className="max-w-2xl text-brand-gray">
-          Fill in the key details below. The Common Paper Mutual Non-Disclosure Agreement updates
-          as you type, and you can download the completed document as a PDF.
+          Chat with our AI assistant about your agreement. The Common Paper Mutual Non-Disclosure
+          Agreement fills in as you answer, and you can download the completed document as a PDF.
         </p>
       </header>
       <NdaCreator terms={terms} />

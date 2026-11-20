@@ -5,7 +5,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-Current state: only the Mutual NDA document is supported, with a fake login and no AI chat yet. See "Implementation status" below.
+Current state: only the Mutual NDA document is supported, drafted via AI chat, with a fake login. See "Implementation status" below.
 
 ## Development process
 
@@ -61,5 +61,9 @@ Backend available at http://localhost:8000
   - Backend (`backend/app`): `create_app(db_path, static_dir)` in `main.py`; `GET /api/health`; static mount registered last. `db.py` deletes and recreates SQLite with a `users` table on startup. No auth endpoints yet.
   - Docker: multi-stage `Dockerfile` (node:24 build, python:3.15 + uv runtime); env vars `STATIC_DIR`, `DB_PATH`; `.env` passed via `--env-file`, never baked in. Start/stop scripts build and run a container named `prelegal`.
   - Tests: `cd frontend && npm test` (Vitest, `src/lib/*.test.ts`); `cd backend && uv run pytest`.
+- PL-5: AI chat replaces the NDA form:
+  - Backend: `POST /api/chat` in `backend/app/chat.py` is stateless; it takes `{messages, fields}` and returns `ChatTurn {reply, fields}` via LiteLLM/OpenRouter/Cerebras Structured Outputs. `NdaFields` mirrors the frontend `NdaData` in camelCase (pydantic aliases); the LLM returns the full field snapshot each turn. An empty history yields the AI greeting. `main.py` loads the repo `.env` for local dev.
+  - Frontend: `NdaChat.tsx` (replaces `NdaForm.tsx`) calls `lib/chat.ts` `sendChat`; `NdaCreator` replaces its state with the returned fields. Shared `inputClass` lives in `components/styles.ts`.
+  - Tests: backend mocks `completion`; `test_live_chat_fills_fields` hits the real model and is skipped without `OPENROUTER_API_KEY`.
 
-Next up: real sign up / sign in, AI chat, additional document types.
+Next up: real sign up / sign in, additional document types.

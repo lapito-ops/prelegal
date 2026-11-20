@@ -52,12 +52,6 @@ export const SIGNING_STATEMENT =
 export const ATTRIBUTION =
   "Common Paper Mutual Non-Disclosure Agreement (Version 1.0) free to use under CC BY 4.0.";
 
-export function todayIso(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
 /** Formats an ISO date as e.g. "November 15, 2026" without timezone drift. */
 export function formatDate(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);
