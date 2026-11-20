@@ -5,82 +5,118 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import chat as chat_module
-from app.chat import ChatRequest, ChatTurn, build_messages, chat
+from app.chat import ChatRequest, Draft, LlmTurn, build_messages, chat, normalize
 from app.main import create_app
 
 EMPTY_PARTY = {"name": "", "title": "", "company": "", "noticeAddress": ""}
-FIELDS = {
-    "purpose": "",
-    "effectiveDate": "",
-    "mndaTermType": "expires",
-    "mndaTermYears": 1,
-    "confidentialityType": "years",
-    "confidentialityYears": 1,
-    "governingLaw": "",
-    "jurisdiction": "",
-    "modifications": "",
-    "party1": EMPTY_PARTY,
-    "party2": EMPTY_PARTY,
-}
+NO_DRAFT = {"documentId": "", "parties": [], "terms": []}
+live = pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="needs OPENROUTER_API_KEY")
 
 
-def request(messages=()) -> ChatRequest:
-    return ChatRequest.model_validate({"messages": list(messages), "fields": FIELDS})
+def request(messages=(), draft=NO_DRAFT) -> ChatRequest:
+    return ChatRequest.model_validate({"messages": list(messages), "draft": draft})
 
 
-def fake_completion(turn: dict, calls: list):
+def fake_completion(turns: list[dict], calls: list):
+    """Returns each turn in order, recording the kwargs of every call."""
+
     def completion(**kwargs):
+        content = LlmTurn.model_validate(turns[len(calls)]).model_dump_json(by_alias=True)
         calls.append(kwargs)
-        content = ChatTurn.model_validate(turn).model_dump_json(by_alias=True)
         return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
 
     return completion
 
 
-def test_build_messages_puts_fields_in_system_prompt():
-    messages = build_messages(request([{"role": "user", "content": "hi"}]))
-    assert messages[0]["role"] == "system"
-    assert '"governingLaw": ""' in messages[0]["content"]
-    assert messages[1:] == [{"role": "user", "content": "hi"}]
+def nda_draft(**terms) -> dict:
+    return {
+        "documentId": "mutual-nda",
+        "parties": [{**EMPTY_PARTY, "company": "Acme Inc"}],
+        "terms": [{"label": k, "value": v} for k, v in terms.items()],
+    }
 
 
-def test_chat_parses_structured_output(monkeypatch):
+def test_build_messages_lists_catalog_and_draft():
+    messages = build_messages(request().messages, normalize(Draft.model_validate(nda_draft())))
+    system = messages[0]["content"]
+    assert "- pilot: Pilot Agreement" in system
+    assert "Parties: Provider, Customer" in system
+    assert '"label": "Governing Law"' in system
+
+
+def test_normalize_fits_draft_to_document():
+    draft = normalize(Draft.model_validate(nda_draft(Jurisdiction="Wilmington", Bogus="x")))
+    assert len(draft.parties) == 2
+    assert draft.parties[0].company == "Acme Inc"
+    assert [t.label for t in draft.terms][:2] == ["Purpose", "Effective Date"]
+    assert {t.label: t.value for t in draft.terms}["Jurisdiction"] == "Wilmington"
+    assert "Bogus" not in {t.label for t in draft.terms}
+
+
+def test_normalize_without_document_has_no_terms():
+    draft = normalize(Draft.model_validate({**NO_DRAFT, "terms": [{"label": "Purpose", "value": "x"}]}))
+    assert draft.document_id == "" and draft.terms == [] and len(draft.parties) == 2
+
+
+def test_chat_joins_reply_and_question(monkeypatch):
     calls = []
-    turn = {"reply": "Who is the other party?", "fields": {**FIELDS, "governingLaw": "Delaware"}}
-    monkeypatch.setattr(chat_module, "completion", fake_completion(turn, calls))
+    turn = {"draft": NO_DRAFT, "reply": "Hello.", "question": "What do you need?"}
+    monkeypatch.setattr(chat_module, "completion", fake_completion([turn], calls))
     result = chat(request())
-    assert result.reply == "Who is the other party?"
-    assert result.fields.governing_law == "Delaware"
-    assert calls[0]["response_format"] is ChatTurn
+    assert result.reply == "Hello.\n\nWhat do you need?"
+    assert len(calls) == 1
+    assert calls[0]["response_format"] is LlmTurn
     assert calls[0]["extra_body"] == {"provider": {"order": ["cerebras"]}}
 
 
+def test_chat_asks_again_when_document_is_picked(monkeypatch):
+    calls = []
+    picked = {"draft": nda_draft(), "reply": "", "question": "What is the purpose?"}
+    filled = {"draft": nda_draft(Purpose="Partnership"), "reply": "Noted.", "question": "Who signs?"}
+    monkeypatch.setattr(chat_module, "completion", fake_completion([picked, filled], calls))
+    result = chat(request([{"role": "user", "content": "An NDA for a partnership"}]))
+    assert len(calls) == 2
+    assert '"label": "Purpose"' in calls[1]["messages"][0]["content"]
+    assert result.reply == "Noted.\n\nWho signs?"
+    assert result.draft.terms[0].value == "Partnership"
+
+
 def test_chat_endpoint_returns_camel_case(tmp_path, monkeypatch):
-    turn = {"reply": "Hello", "fields": {**FIELDS, "party1": {**EMPTY_PARTY, "noticeAddress": "a@b.com"}}}
-    monkeypatch.setattr(chat_module, "completion", fake_completion(turn, []))
+    draft = normalize(Draft.model_validate(nda_draft())).model_dump(by_alias=True)
+    turn = {"draft": draft, "reply": "Hi.", "question": "Who is the other party?"}
+    monkeypatch.setattr(chat_module, "completion", fake_completion([turn], []))
     with TestClient(create_app(tmp_path / "db", tmp_path / "missing")) as client:
-        response = client.post("/api/chat", json={"messages": [], "fields": FIELDS})
+        response = client.post("/api/chat", json={"messages": [], "draft": draft})
     assert response.status_code == 200
-    assert response.json() == turn
+    assert response.json() == {"reply": "Hi.\n\nWho is the other party?", "draft": draft}
 
 
-def test_chat_endpoint_rejects_invalid_fields(tmp_path):
+def test_chat_endpoint_rejects_unknown_document(tmp_path):
     with TestClient(create_app(tmp_path / "db", tmp_path / "missing")) as client:
-        bad = {**FIELDS, "mndaTermType": "forever"}
-        assert client.post("/api/chat", json={"messages": [], "fields": bad}).status_code == 422
+        bad = {**NO_DRAFT, "documentId": "employment"}
+        assert client.post("/api/chat", json={"messages": [], "draft": bad}).status_code == 422
 
 
-@pytest.mark.skipif(not os.environ.get("OPENROUTER_API_KEY"), reason="needs OPENROUTER_API_KEY")
-def test_live_chat_fills_fields():
+@live
+def test_live_chat_picks_document_and_fills_terms():
     greeting = chat(request())
-    assert greeting.reply
+    assert greeting.reply.endswith("?")
     turn = chat(
         request(
             [
                 {"role": "assistant", "content": greeting.reply},
-                {"role": "user", "content": "It's between Acme Inc and Globex Corp, under Delaware law."},
+                {"role": "user", "content": "An NDA between Acme Inc and Globex Corp, under Delaware law."},
             ]
         )
     )
-    assert turn.fields.governing_law == "Delaware"
-    assert {turn.fields.party1.company, turn.fields.party2.company} >= {"Acme Inc", "Globex Corp"}
+    assert turn.draft.document_id == "mutual-nda"
+    assert {t.label: t.value for t in turn.draft.terms}["Governing Law"] == "Delaware"
+    assert {p.company for p in turn.draft.parties} == {"Acme Inc", "Globex Corp"}
+    assert turn.reply.endswith("?")
+
+
+@live
+def test_live_chat_offers_closest_for_unsupported_document():
+    turn = chat(request([{"role": "user", "content": "I need an employment contract for a new hire."}]))
+    assert turn.draft.document_id == ""
+    assert turn.reply.endswith("?")

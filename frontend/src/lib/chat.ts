@@ -1,4 +1,4 @@
-import type { NdaData } from "./nda";
+import type { Draft } from "./draft";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -7,15 +7,15 @@ export interface ChatMessage {
 
 export interface ChatTurn {
   reply: string;
-  fields: NdaData;
+  draft: Draft;
 }
 
-/** Sends the conversation and current fields; an empty history returns the AI's greeting. */
-export async function sendChat(messages: ChatMessage[], fields: NdaData): Promise<ChatTurn> {
+/** Sends the conversation and current draft; an empty history returns the AI's greeting. */
+export async function sendChat(messages: ChatMessage[], draft: Draft): Promise<ChatTurn> {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, fields }),
+    body: JSON.stringify({ messages, draft }),
   });
   if (!response.ok) throw new Error(`Chat request failed: ${response.status}`);
   return response.json();

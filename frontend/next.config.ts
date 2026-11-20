@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-/** Static export served by the FastAPI backend; trailing slashes emit nda/index.html. */
+/** Static export served by the FastAPI backend; trailing slashes emit draft/index.html. */
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,

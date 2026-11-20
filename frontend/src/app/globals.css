@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Brand palette; NdaPdf.tsx mirrors these hex values for the PDF. */
+/* Brand palette; DraftPdf.tsx mirrors these hex values for the PDF. */
 @theme {
   --color-brand-yellow: #ecad0a;
   --color-brand-blue: #209dd7;
