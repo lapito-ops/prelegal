@@ -10,7 +10,7 @@ scripts/start-linux.sh   # or start-mac.sh / start-windows.sh
 scripts/stop-linux.sh    # or stop-mac.sh / stop-windows.sh
 ```
 
-The app is served at http://localhost:8000. The SQLite database is recreated on every start.
+The app is served at http://localhost:8000. Create an account on the sign-up page; your drafts are saved under My documents. The SQLite database (accounts and documents) is recreated on every start.
 
 ## Develop
 

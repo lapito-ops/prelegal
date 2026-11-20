@@ -2,11 +2,8 @@ import os
 from types import SimpleNamespace
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app import chat as chat_module
 from app.chat import ChatRequest, Draft, LlmTurn, build_messages, chat, normalize
-from app.main import create_app
 
 EMPTY_PARTY = {"name": "", "title": "", "company": "", "noticeAddress": ""}
 NO_DRAFT = {"documentId": "", "parties": [], "terms": []}
@@ -81,20 +78,22 @@ def test_chat_asks_again_when_document_is_picked(monkeypatch):
     assert result.draft.terms[0].value == "Partnership"
 
 
-def test_chat_endpoint_returns_camel_case(tmp_path, monkeypatch):
+def test_chat_endpoint_returns_camel_case(user_client, monkeypatch):
     draft = normalize(Draft.model_validate(nda_draft())).model_dump(by_alias=True)
     turn = {"draft": draft, "reply": "Hi.", "question": "Who is the other party?"}
     monkeypatch.setattr(chat_module, "completion", fake_completion([turn], []))
-    with TestClient(create_app(tmp_path / "db", tmp_path / "missing")) as client:
-        response = client.post("/api/chat", json={"messages": [], "draft": draft})
+    response = user_client.post("/api/chat", json={"messages": [], "draft": draft})
     assert response.status_code == 200
     assert response.json() == {"reply": "Hi.\n\nWho is the other party?", "draft": draft}
 
 
-def test_chat_endpoint_rejects_unknown_document(tmp_path):
-    with TestClient(create_app(tmp_path / "db", tmp_path / "missing")) as client:
-        bad = {**NO_DRAFT, "documentId": "employment"}
-        assert client.post("/api/chat", json={"messages": [], "draft": bad}).status_code == 422
+def test_chat_endpoint_rejects_unknown_document(user_client):
+    bad = {**NO_DRAFT, "documentId": "employment"}
+    assert user_client.post("/api/chat", json={"messages": [], "draft": bad}).status_code == 422
+
+
+def test_chat_endpoint_requires_sign_in(client):
+    assert client.post("/api/chat", json={"messages": [], "draft": NO_DRAFT}).status_code == 401
 
 
 @live

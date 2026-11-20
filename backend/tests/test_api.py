@@ -1,22 +1,6 @@
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-
-
-@pytest.fixture
-def db_path(tmp_path):
-    return tmp_path / "prelegal.db"
-
-
-@pytest.fixture
-def client(tmp_path, db_path):
-    static = tmp_path / "static"
-    (static / "draft").mkdir(parents=True)
-    (static / "index.html").write_text("login page")
-    (static / "draft" / "index.html").write_text("draft page")
-    with TestClient(create_app(db_path, static)) as c:
-        yield c
 
 
 def test_health(client):
